@@ -1,0 +1,30 @@
+# Deploys the Spring Boot Visitor Counter with Redis.
+# IMAGE is set by the CI/CD pipeline, e.g.  IMAGE=myuser/visitor-counter-springboot:12-a1b2c3d
+services:
+  web:
+    image: ${IMAGE:-visitor-counter-springboot:local}
+    container_name: ${APP_NAME:-vc-springboot}-web
+    environment:
+      REDIS_HOST: redis
+      APP_ENV: ${APP_ENV:-dev}
+    ports:
+      - "${APP_PORT:-8081}:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${APP_NAME:-vc-springboot}-redis
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis-data:
